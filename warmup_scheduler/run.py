@@ -36,12 +36,25 @@ if __name__ == '__main__':
 
     lr_list = list()
     for epoch in range(epochs):
-        current_lr = optim.param_groups[0]['lr']
 
         optim.step()
         scheduler_warmup.step()
 
+        current_lr = optim.param_groups[0]['lr']
         print(epoch + 1, current_lr)
         lr_list.append(current_lr)
+
+        if epoch % 3 == 0:
+            # Save their state
+            state_op = optim.state_dict()
+            state_sc = scheduler_warmup.state_dict()
+            # Recreate them
+            optim = SGD(model, 0.1)
+            lr_schduler = CosineAnnealingLR(optim, T_max=epochs - 5, eta_min=0.02)
+            scheduler_warmup = GradualWarmupScheduler(optim, multiplier=1, total_epoch=5, after_scheduler=lr_schduler)
+            optim.load_state_dict(state_op)
+            scheduler_warmup.load_state_dict(state_sc)
+
+
 
     plot(lr_list)

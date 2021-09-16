@@ -62,3 +62,17 @@ class GradualWarmupScheduler(_LRScheduler):
                 return super(GradualWarmupScheduler, self).step(epoch)
         else:
             self.step_ReduceLROnPlateau(metrics, epoch)
+
+    def state_dict(self):
+        state_dict = {key: value
+                      for key, value in self.__dict__.items()
+                      if key not in ['optimizer', "after_scheduler"]}
+        if self.after_scheduler:
+            state_dict['after_scheduler'] = self.after_scheduler.state_dict()
+        return state_dict
+
+    def load_state_dict(self, state_dict):
+        after_scheduler_state = state_dict.pop("after_scheduler", None)
+        self.__dict__.update(state_dict)
+        if after_scheduler_state:
+            self.after_scheduler.load_state_dict(after_scheduler_state)
